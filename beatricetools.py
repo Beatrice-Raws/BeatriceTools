@@ -1,6 +1,10 @@
 import ast
 from   typing import Any, List
 
+import vapoursynth as vs
+from   vapoursynth import core
+
+
 class ExprStr(ast.NodeVisitor):
     """
     Drop-in wrapper for Expr() string in infix form.
@@ -135,3 +139,26 @@ class ExprStr(ast.NodeVisitor):
     def __str__(self) -> str:
         return ' '.join(self.stack[::-1])
         
+
+def extract_planes(clip: vs.VideoNode, plane_format: vs.Format = vs.GRAY) -> List[vs.VideoNode]:
+    """
+    Extracts clip's planes as list.
+
+    Usage:
+
+    ``y, u, v = extract_planes(clip)``
+
+    ``y, *_   = extract_planes(clip)``
+
+    ``_, u, v = extract_planes(clip)``
+
+    :param VideoNode clip: Clip to work with
+    :param Format plane_format: Format to use for each extracted plane
+    :return: List with every plane of clip in order they're stored
+    :rtype: List[VideoNode]
+    """
+
+    planes = []
+    for i in range(clip.format.num_planes):
+        planes.append(core.std.ShufflePlanes(clip, i, plane_format))
+    return planes
