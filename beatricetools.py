@@ -81,15 +81,17 @@ class ExprStr(ast.NodeVisitor):
 
     def visit_Name(self, node: ast.Name) -> None:
         if (len(node.id) > 1
-            or node.id not in self.variables):
-            raise SyntaxError(f'ExprStr: clip name \'{node.id}\' is not valid.')
+                or node.id not in self.variables):
+            raise SyntaxError(
+                f'ExprStr: clip name \'{node.id}\' is not valid.')
 
         self.stack.append(node.id)
 
     def visit_Compare(self, node: ast.Compare) -> Any:
         for i in range(len(node.ops) - 1, -1, -1):
             if type(node.ops[i]) not in self.operators:
-                raise SyntaxError(f'ExprStr: operator \'{type(node.ops[i])}\' is not supported.')
+                raise SyntaxError(
+                    f'ExprStr: operator \'{type(node.ops[i])}\' is not supported.')
 
             self.stack.append(self.operators[type(node.ops[i])])
 
@@ -98,11 +100,13 @@ class ExprStr(ast.NodeVisitor):
         self.visit(node.left)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> Any:
-        raise SyntaxError('ExprStr: arithmetical operators taking one argument are not allowed.')
+        raise SyntaxError(
+            'ExprStr: arithmetical operators taking one argument are not allowed.')
 
     def visit_BinOp(self, node: ast.BinOp) -> Any:
         if type(node.op) not in self.operators:
-            raise SyntaxError(f'ExprStr: operator \'{type(node.op)}\' is not supported.')
+            raise SyntaxError(
+                f'ExprStr: operator \'{type(node.op)}\' is not supported.')
 
         self.stack.append(self.operators[type(node.op)])
 
@@ -122,14 +126,15 @@ class ExprStr(ast.NodeVisitor):
                     break
             
             if not is_re_function:
-                raise SyntaxError(f'ExprStr: function \'{node.func.id}\' is not supported.')
-        
+                raise SyntaxError(
+                    f'ExprStr: function \'{node.func.id}\' is not supported.')
+
         if not is_re_function:
             args_required = self.functions[node.func.id]
 
         if len(node.args) != args_required:
             raise SyntaxError('ExprStr: function \'{}\' takes exactly {} arguments, but {} provided.'
-                .format(node.func.id, args_required, len(node.args)))
+                              .format(node.func.id, args_required, len(node.args)))
 
         self.stack.append(node.func.id)
 
@@ -142,7 +147,6 @@ class ExprStr(ast.NodeVisitor):
         self.visit(node.orelse)
         self.visit(node.body)
         self.visit(node.test)
-
 
     def __str__(self) -> str:
         return ' '.join(self.stack[::-1])
