@@ -34,6 +34,8 @@ class ExprStr(ast.NodeVisitor):
     import re
     variables = 'abcdefghijklmnopqrstuvwxyz'
 
+    # Available operators and their Expr respresentation
+    # Conditional operator handled separately in visit_IfExp()
     operators = {
         ast.Add:  '+',
         ast.Sub:  '-',
@@ -47,6 +49,7 @@ class ExprStr(ast.NodeVisitor):
         ast.LtE: '<='
     }
 
+    # Avaialable fixed-name functions and number of their arguments
     functions = {
         'abs' : 1,
         'exp' : 1,
@@ -62,6 +65,7 @@ class ExprStr(ast.NodeVisitor):
         'xor' : 2,
     }
 
+    # Available functions with names defined as regexp and number of their arguments
     functions_re = {
         re.compile(r'dup\d*') : 1,
         re.compile(r'swap\d*'): 2
@@ -69,6 +73,7 @@ class ExprStr(ast.NodeVisitor):
 
     def __init__(self, input_string: str):
         self.stack: List[str] = []
+        # 'eval' mode takes care of assignment operator
         self.visit(ast.parse(input_string, mode='eval'))
 
     def visit_Num(self, node: ast.Num) -> None:
@@ -123,7 +128,7 @@ class ExprStr(ast.NodeVisitor):
             args_required = self.functions[node.func.id]
 
         if len(node.args) != args_required:
-            raise SyntaxError( 'ExprStr: function \'{}\' takes exactly {} arguments, but {} provided.'
+            raise SyntaxError('ExprStr: function \'{}\' takes exactly {} arguments, but {} provided.'
                 .format(node.func.id, args_required, len(node.args)))
 
         self.stack.append(node.func.id)
