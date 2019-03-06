@@ -92,6 +92,9 @@ class ExprStr(ast.NodeVisitor):
             
         self.visit(node.left)
 
+    def visit_UnaryOp(self, node: ast.UnaryOp) -> Any:
+        raise SyntaxError('ExprStr: arithmetical operators taking one argument are not allowed.')
+
     def visit_BinOp(self, node: ast.BinOp) -> Any:
         if type(node.op) not in self.operators:
             raise SyntaxError(f'ExprStr: operator \'{type(node.op)}\' is not supported.')
