@@ -72,10 +72,46 @@ class ExprStr(ast.NodeVisitor):
         # re.compile(r'swap\d*'): 2,
     }
 
-    def __init__(self, input_string: str):
+    @overload
+    def __new__(cls, string: str) -> 'ExprStr': ...
+    @overload
+    def __new__(cls, *args: Any, **kwargs: Any) -> vs.VideoNode: ...
+
+    def __new__(cls, *args, **kwargs):
+        if len(args) == 0 and len(kwargs) == 0:
+            raise TypeError
+        
+        if len(args) == 1 and isinstance(args[0], str):
+            filter_mode = False
+            string = args[0]
+        elif len(kwargs) == 1 and 'string' in kwargs:
+            filter_mode = False
+            string = kwargs['string']
+        else:
+            filter_mode = True
+            if len(args) > 1:
+                string = args[1]
+            else:
+                string = kwargs['string']
+
+        obj = object.__new__(cls)
+        obj.__init__(string)
+
+        if filter_mode:
+            if len(args) > 1:
+                new_args    = list(args)
+                new_args[1] = str(obj)
+                return core.std.Expr(*new_args, **kwargs)
+            else:
+                kwargs['string'] = str(obj)
+                return core.std.Expr(*args, **kwargs)
+        else:
+            return obj
+
+    def __init__(self, string: str):
         self.stack: List[str] = []
         # 'eval' mode takes care of assignment operator
-        self.visit(ast.parse(input_string, mode='eval'))
+        self.visit(ast.parse(string, mode='eval'))
 
     def visit_Num(self, node: ast.Num) -> None:
         self.stack.append(str(node.n))
