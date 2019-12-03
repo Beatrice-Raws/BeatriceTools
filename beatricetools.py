@@ -13,18 +13,19 @@ class ExprStr(ast.NodeVisitor):
 
     ``core.std.Expr([clip1, clip2], ExprStr('x * 0.5 + y * 0.5'))``
 
-    All operators and functions of Expr are supported, but input string must contain a valid Python expression, therefore syntax slightly differs:
+    Almost all operators and functions of Expr are supported,
     1. Parentheses ``()`` are supported
     2. Equality operator is ``==``
     3. Python conditional expression ``b if a else c`` is used for conditional operator
+    4. Stack manipulation functions swap() and dupo() are not supported
     
     It should be noted that though chaining of comparison operators is syntactically correct, it's semantics completely differs for Python and Expr interpreter.
 
     More examples:
 
-    ``>>> print(ExprStr('swap(sqrt(a) * (0 if b < 100 else c), e)'))``
+    ``>>> print(ExprStr('abs(sqrt(a) * (0 if b < 100 else c), e)'))``
 
-    ``a sqrt b 100 < 0 c ? * e swap``
+    ``a sqrt b 100 < 0 c ? * e abs``
 
     ``>>> print(ExprStr('a > b < c >= d'))``
 
@@ -67,8 +68,8 @@ class ExprStr(ast.NodeVisitor):
 
     # Available functions with names defined as regexp and number of their arguments
     functions_re = {
-        re.compile(r'dup\d*') : 1,
-        re.compile(r'swap\d*'): 2
+        # re.compile(r'dup\d*') : 1,
+        # re.compile(r'swap\d*'): 2,
     }
 
     def __init__(self, input_string: str):
