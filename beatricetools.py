@@ -1,5 +1,6 @@
 import ast
-from   typing import Any, List
+import re
+from   typing import Any, List, overload
 
 import vapoursynth as vs
 from   vapoursynth import core
@@ -14,12 +15,17 @@ class ExprStr(ast.NodeVisitor):
     ``core.std.Expr([clip1, clip2], ExprStr('x * 0.5 + y * 0.5'))``
 
     Almost all operators and functions of Expr are supported,
+    but input string must contain a valid Python expression,
+    therefore syntax slightly differs:
     1. Parentheses ``()`` are supported
     2. Equality operator is ``==``
-    3. Python conditional expression ``b if a else c`` is used for conditional operator
+    3. Python conditional expression ``b if a else c`` is used
+       for conditional operator
     4. Stack manipulation functions swap() and dupo() are not supported
     
-    It should be noted that though chaining of comparison operators is syntactically correct, it's semantics completely differs for Python and Expr interpreter.
+    It should be noted that though chaining of comparison operators is
+    syntactically correct, it's semantics completely differs
+    for Python interpreter and Expr compiler.
 
     More examples:
 
@@ -32,7 +38,6 @@ class ExprStr(ast.NodeVisitor):
     ``a b > c < d >=``
     """
 
-    import re
     variables = 'abcdefghijklmnopqrstuvwxyz'
 
     # Available operators and their Expr respresentation
@@ -47,7 +52,7 @@ class ExprStr(ast.NodeVisitor):
         ast.Gt:   '>',
         ast.Lt:   '<',
         ast.GtE: '>=',
-        ast.LtE: '<='
+        ast.LtE: '<=',
     }
 
     # Avaialable fixed-name functions and number of their arguments
