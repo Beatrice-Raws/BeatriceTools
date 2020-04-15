@@ -18,30 +18,29 @@ class ExprStr(ast.NodeVisitor):
     Almost all operators and functions of Expr are supported,
     but input string must contain a valid Python expression,
     therefore syntax slightly differs:
-    1. Parentheses ``()`` are supported
-    2. Equality operator is ``==``
+    1. Parentheses ``()`` are used to order operations.
+    2. Equality operator is ``==``.
     3. Python conditional expression ``b if a else c`` replaces
-       conditional operator
-    4. Stack manipulation functions swap() and dup() are not supported
-
-    Don't try to use Python comparison operator chaining ('a < b <= c'). You
-    won't get an error, but behavior of produced Expr string is undefined.
+       conditional operator ``?``.
+    4. Stack manipulation functions swap() and dup() are not supported.
+    5. XOR (exclusive-or) logical operator is not supported.
 
     More examples:
+
+    ``>>> print(ExprStr('50 if a < b and b < c else 0'))``
+
+    ``a b > c < d >=``
 
     ``>>> print(ExprStr('abs(sqrt(a) * (0 if b < 100 else c), e)'))``
 
     ``a sqrt b 100 < 0 c ? * e abs``
 
-    ``>>> print(ExprStr('a > b < c >= d'))``
 
-    ``a b > c < d >=``
     """
 
     variables = 'abcdefghijklmnopqrstuvwxyz'
 
     # Available operators and their Expr respresentation
-    # Conditional operator handled separately in visit_IfExp()
     operators = {
         ast.Add:  '+',
         ast.Sub:  '-',
@@ -53,6 +52,11 @@ class ExprStr(ast.NodeVisitor):
         ast.Lt:   '<',
         ast.GtE: '>=',
         ast.LtE: '<=',
+
+        ast.Not: 'not',
+        ast.And: 'and',
+        ast.Or:  'or',
+        # ???: 'xor',
     }
 
     # Avaialable fixed-name functions and number of their arguments
@@ -60,15 +64,11 @@ class ExprStr(ast.NodeVisitor):
         'abs' : 1,
         'exp' : 1,
         'log' : 1,
-        'not' : 1,
         'sqrt': 1,
 
-        'and' : 2,
         'max' : 2,
         'min' : 2,
-        'or'  : 2,
         'pow' : 2,
-        'xor' : 2,
     }
 
     # Available functions with names defined as regexp and number of their
@@ -132,20 +132,38 @@ class ExprStr(ast.NodeVisitor):
         self.stack.append(node.id)
 
     def visit_Compare(self, node: ast.Compare) -> Any:
-        for i in range(len(node.ops) - 1, -1, -1):
-            if type(node.ops[i]) not in self.operators:
-                raise SyntaxError('ExprStr: operator "{}" is not supported.'
-                                  .format(type(node.ops[i])))
+        if len(node.ops) > 1:
+            raise SyntaxError(
+                'ExprStr: chaining of comparison operators at column {}'
+                ' is not supported'.format(node.col_offset))
+        op = node.ops[0]
 
-            self.stack.append(self.operators[type(node.ops[i])])
-
-            self.visit(node.comparators[i])
-
+        if type(op) not in self.operators:
+            raise SyntaxError(
+                'ExprStr: operator "{}" at column {} is not supported.'
+                .format(op, node.col_offset))
+        self.stack.append(self.operators[type(op)])
+        self.visit(node.comparators[0])
         self.visit(node.left)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> Any:
-        raise SyntaxError('ExprStr: arithmetical operators taking \
-                           one argument are not allowed.')
+        if type(node.op) not in self.operators:
+            raise SyntaxError(
+                'ExprStr: operator "{}" at column {} is not supported.'
+                .format(type(node.op), node.col_offset))
+        self.stack.append(self.operators[type(node.op)])
+        self.visit(node.operand)
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> Any:
+        if type(node.op) not in self.operators:
+            raise SyntaxError(
+                'ExprStr: operator "{}" at column {} is not supported.'
+                .format(type(node.op), node.col_offset))
+
+        self.stack.append(self.operators[type(node.op)])
+
+        self.visit(node.values[0])
+        self.visit(node.values[1])
 
     def visit_BinOp(self, node: ast.BinOp) -> Any:
         if type(node.op) not in self.operators:
