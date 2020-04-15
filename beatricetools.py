@@ -126,7 +126,8 @@ class ExprStr(ast.NodeVisitor):
         if (len(node.id) > 1
                 or node.id not in self.variables):
             raise SyntaxError(
-                f'ExprStr: clip name \'{node.id}\' is not valid.')
+                'ExprStr: clip name "{}" at column {} is not valid.'
+                .format(node.id, node.col_offset))
 
         self.stack.append(node.id)
 
@@ -149,7 +150,8 @@ class ExprStr(ast.NodeVisitor):
     def visit_BinOp(self, node: ast.BinOp) -> Any:
         if type(node.op) not in self.operators:
             raise SyntaxError(
-                f'ExprStr: operator \'{type(node.op)}\' is not supported.')
+                'ExprStr: operator "{}" at column {} is not supported.'
+                .format(type(node.op), node.col_offset))
 
         self.stack.append(self.operators[type(node.op)])
 
@@ -170,16 +172,18 @@ class ExprStr(ast.NodeVisitor):
 
             if not is_re_function:
                 raise SyntaxError(
-                    f'ExprStr: function \'{node.func.id}\' is not supported.')
+                    'ExprStr: function "{}" at column {} is not supported.'
+                    .format(node.func.id, node.col_offset))
 
         if not is_re_function:
             args_required = self.functions[node.func.id]
 
         if len(node.args) != args_required:
             raise SyntaxError(
-                'ExprStr: function \'{}\' takes exactly {} arguments, but {} \
-                    provided.'
-                .format(node.func.id, args_required, len(node.args)))
+                'ExprStr: function "{}" at column {}'
+                ' takes exactly {} arguments, but {} provided.'
+                .format(node.func.id, node.col_offset, args_required,
+                        len(node.args)))
 
         self.stack.append(node.func.id)
 
