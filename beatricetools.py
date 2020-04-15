@@ -12,20 +12,20 @@ class ExprStr(ast.NodeVisitor):
 
     Usage:
 
-    ``core.std.Expr([clip1, clip2], ExprStr('x * 0.5 + y * 0.5'))``
+    ``core.std.Expr((clip1, clip2), ExprStr('x * 0.5 + y * 0.5'))``
+    ``ExprStr((clip1, clip2), 'x * 0.5 + y * 0.5')``
 
     Almost all operators and functions of Expr are supported,
     but input string must contain a valid Python expression,
     therefore syntax slightly differs:
     1. Parentheses ``()`` are supported
     2. Equality operator is ``==``
-    3. Python conditional expression ``b if a else c`` is used
-       for conditional operator
-    4. Stack manipulation functions swap() and dupo() are not supported
-    
-    It should be noted that though chaining of comparison operators is
-    syntactically correct, it's semantics completely differs
-    for Python interpreter and Expr compiler.
+    3. Python conditional expression ``b if a else c`` replaces
+       conditional operator
+    4. Stack manipulation functions swap() and dup() are not supported
+
+    Don't try to use Python comparison operator chaining ('a < b <= c'). You
+    won't get an error, but behavior of produced Expr string is undefined.
 
     More examples:
 
