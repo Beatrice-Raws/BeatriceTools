@@ -1,9 +1,9 @@
 import ast
 import re
-from   typing import Any, List, overload
+from typing import Any, List, overload
 
 import vapoursynth as vs
-from   vapoursynth import core
+from vapoursynth import core
 
 
 class ExprStr(ast.NodeVisitor):
@@ -71,7 +71,8 @@ class ExprStr(ast.NodeVisitor):
         'xor' : 2,
     }
 
-    # Available functions with names defined as regexp and number of their arguments
+    # Available functions with names defined as regexp and number of their
+    # arguments
     functions_re = {
         # re.compile(r'dup\d*') : 1,
         # re.compile(r'swap\d*'): 2,
@@ -85,7 +86,7 @@ class ExprStr(ast.NodeVisitor):
     def __new__(cls, *args, **kwargs):
         if len(args) == 0 and len(kwargs) == 0:
             raise TypeError
-        
+
         if len(args) == 1 and isinstance(args[0], str):
             filter_mode = False
             string = args[0]
@@ -104,7 +105,7 @@ class ExprStr(ast.NodeVisitor):
 
         if filter_mode:
             if len(args) > 1:
-                new_args    = list(args)
+                new_args = list(args)
                 new_args[1] = str(obj)
                 return core.std.Expr(*new_args, **kwargs)
             else:
@@ -132,18 +133,18 @@ class ExprStr(ast.NodeVisitor):
     def visit_Compare(self, node: ast.Compare) -> Any:
         for i in range(len(node.ops) - 1, -1, -1):
             if type(node.ops[i]) not in self.operators:
-                raise SyntaxError(
-                    f'ExprStr: operator \'{type(node.ops[i])}\' is not supported.')
+                raise SyntaxError('ExprStr: operator "{}" is not supported.'
+                                  .format(type(node.ops[i])))
 
             self.stack.append(self.operators[type(node.ops[i])])
 
             self.visit(node.comparators[i])
-            
+
         self.visit(node.left)
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> Any:
-        raise SyntaxError(
-            'ExprStr: arithmetical operators taking one argument are not allowed.')
+        raise SyntaxError('ExprStr: arithmetical operators taking \
+                           one argument are not allowed.')
 
     def visit_BinOp(self, node: ast.BinOp) -> Any:
         if type(node.op) not in self.operators:
@@ -159,14 +160,14 @@ class ExprStr(ast.NodeVisitor):
         import re
 
         is_re_function = False
-        args_required  = 0
+        args_required = 0
         if node.func.id not in self.functions:
             for pattern, args_count in self.functions_re.items():
                 if pattern.fullmatch(node.func.id):
                     is_re_function = True
                     args_required = args_count
                     break
-            
+
             if not is_re_function:
                 raise SyntaxError(
                     f'ExprStr: function \'{node.func.id}\' is not supported.')
@@ -175,8 +176,10 @@ class ExprStr(ast.NodeVisitor):
             args_required = self.functions[node.func.id]
 
         if len(node.args) != args_required:
-            raise SyntaxError('ExprStr: function \'{}\' takes exactly {} arguments, but {} provided.'
-                              .format(node.func.id, args_required, len(node.args)))
+            raise SyntaxError(
+                'ExprStr: function \'{}\' takes exactly {} arguments, but {} \
+                    provided.'
+                .format(node.func.id, args_required, len(node.args)))
 
         self.stack.append(node.func.id)
 
@@ -192,9 +195,10 @@ class ExprStr(ast.NodeVisitor):
 
     def __str__(self) -> str:
         return ' '.join(self.stack[::-1])
-        
 
-def extract_planes(clip: vs.VideoNode, plane_format: vs.Format = vs.GRAY) -> List[vs.VideoNode]:
+
+def extract_planes(clip: vs.VideoNode, plane_format: vs.Format = vs.GRAY) \
+        -> List[vs.VideoNode]:
     """
     Extracts clip's planes as list.
 
