@@ -1,6 +1,7 @@
 import ast
+from functools import singledispatch
 import re
-from typing import Any, List, overload
+from typing import Any, List, Optional, overload, Tuple
 
 import vapoursynth as vs
 from vapoursynth import core
@@ -237,3 +238,71 @@ def extract_planes(clip: vs.VideoNode, plane_format: vs.Format = vs.GRAY) \
     """
     return [core.std.ShufflePlanes(clip, i, plane_format)
             for i in range(clip.format.num_planes)]
+
+
+def get_subsampling(w: int, h: int, separator='') -> str:
+    '''
+    Converts VapourSynth chroma subsampling notation to human-readable form.
+    Opposite of ``get_vs_subsampling()``.
+
+    Usage:
+
+    ``get_subsampling(1, 1) => '420'``
+
+    ``get_subsampling(0, 0, ':') => '4:4:4'``
+    '''
+    j = 4
+    a = j if w == 0 else j // (w * 2)
+    b = a if h == 0 else 0
+    return separator.join(j, a, b)
+
+
+@singledispatch
+def get_vs_subsampling(subsampling: str) -> Tuple[int, int]:
+    '''
+    Converts human-readable chroma subsampling notation to VapourSynth form.
+    Opposite of ``get_subsampling()``.
+
+    Usage:
+
+    ``w, h = get_vs_subsampling('420')``
+
+    ``_, h = get_vs_subsampling('YUV420P10')``
+
+    ``w, _ = get_vs_subsampling(444)``
+
+    ``w, h = get_vs_subsampling(4, 1, 1)``
+    '''
+    pattern = re.compile(r'\d\d\d')
+    subsampling = pattern.search(subsampling)[0]
+    return get_vs_subsampling(int(subsampling))
+
+
+@get_vs_subsampling.register
+def _(subsampling: int, chroma_w: Optional[int] = None,
+      chroma_h: Optional[int] = None) -> Tuple[int, int]:
+    from math import log2
+
+    if chroma_w is not None and chroma_h is None:
+        raise TypeError("No enough arguments: 'chroma_h' is missing")
+    elif chroma_w is None and chroma_h is not None:
+        raise TypeError("No enough arguments: 'chroma_w' is missing")
+    elif chroma_w is None and chroma_h is None:
+        j = subsampling // 100
+        a = subsampling // 10
+        b = subsampling % 10
+    else:
+        j = subsampling
+        a = chroma_w
+        b = chroma_h
+
+    w = int(log2(j // a))
+    h = 0 if a == b else 1
+
+    # To my understanding of semantics of this values, h can't be 2.
+    # Yet we have it for 4:1:0. so returning 2 when all luma pixels on both
+    # rows shares the same chroma pixel (X:1:0 subsampling schemas).
+    if (a, b) == (1, 0):
+        h = 2
+
+    return w, h
