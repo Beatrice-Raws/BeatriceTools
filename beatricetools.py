@@ -13,6 +13,7 @@ class ExprStr(ast.NodeVisitor):
     Usage:
 
     ``core.std.Expr((clip1, clip2), ExprStr('x * 0.5 + y * 0.5'))``
+
     ``ExprStr((clip1, clip2), 'x * 0.5 + y * 0.5')``
 
     Almost all operators and functions of Expr are supported,
@@ -34,8 +35,6 @@ class ExprStr(ast.NodeVisitor):
     ``>>> print(ExprStr('abs(sqrt(a) * (0 if b < 100 else c), e)'))``
 
     ``a sqrt b 100 < 0 c ? * e abs``
-
-
     """
 
     variables = 'abcdefghijklmnopqrstuvwxyz'
@@ -61,14 +60,14 @@ class ExprStr(ast.NodeVisitor):
 
     # Avaialable fixed-name functions and number of their arguments
     functions = {
-        'abs' : 1,
-        'exp' : 1,
-        'log' : 1,
+        'abs':  1,
+        'exp':  1,
+        'log':  1,
         'sqrt': 1,
 
-        'max' : 2,
-        'min' : 2,
-        'pow' : 2,
+        'max': 2,
+        'min': 2,
+        'pow': 2,
     }
 
     # Available functions with names defined as regexp and number of their
@@ -232,13 +231,9 @@ def extract_planes(clip: vs.VideoNode, plane_format: vs.Format = vs.GRAY) \
 
     ``_, u, v = extract_planes(clip)``
 
-    :param VideoNode clip: Clip to work with
-    :param Format plane_format: Format to use for each extracted plane
-    :return: List with every plane of clip in order they're stored
-    :rtype: List[VideoNode]
+    :param VideoNode clip: Clip to work with.
+    :param Format plane_format: Format to use for each extracted plane.
+    :return: List with every plane of clip in order they're stored.
     """
-
-    planes = []
-    for i in range(clip.format.num_planes):
-        planes.append(core.std.ShufflePlanes(clip, i, plane_format))
-    return planes
+    return [core.std.ShufflePlanes(clip, i, plane_format)
+            for i in range(clip.format.num_planes)]
